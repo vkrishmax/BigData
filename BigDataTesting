@@ -1,0 +1,28 @@
+Approach to Big Data Testing
+
+Needless to say, testing needs to be performed at each of the three stages of data processing that we discussed in the previous post.
+
+Now, testers who have worked with Data Warehousing (DWH) applications can immediately relate to the ETL (Extraction, Transformation and Load) model when they read about the 3 stages of data processing. What they need to keep in mind is, while the processing sounds similar, the strategy deployed to test DWH applications (e.g. sampling when doing manual testing, using automation tools for testing) may not be very useful if tried as silos in big data implementations for the reasons given below. However, understanding and past experience working on DWH applications can definitely help the tester plan big data testing better.
+
+Huge size of Data sets
+Data Variety(Web logs, sensor networks, Social media networks, photo/video images)
+Unstructured vs Structured Data(DWH supports structured data while Big data supports both)
+In the first stage which is the pre-Hadoop process validation, major testing activities include comparing input file and source systems data to ensure extraction has happened correctly and confirm that files are loaded correctly into the HDFS (Hadoop Distributed File System). There is a lot of unstructured or semi structured data at this stage.
+
+The next stage in line is the map-reduce process which involves running the map-reduce programs to process the incoming data from different sources. The key areas of testing in this stage include business logic validation on every node and then validating them after running against multiple nodes, making sure that the map reduce program/process is working correctly and key value pairs are generated correctly and validating the data post the map reduce process. The last step in the map reduce process stage is to make sure that the output data files are generated correctly and are in the right format.
+
+The third or final stage is the output validation phase. The data output files are generated and ready to be moved to an EDW (Enterprise Data Warehouse) or any other system based on the requirement. Here, the tester needs to ensure that the transformation rules are applied correctly, check the data load in the target system including data integrity and confirm that there is no data corruption by comparing the target data with the HDFS file system data.
+
+Testing Approach:
+
+Big data is still emerging and a there is a lot of onus on testers to identify innovative ideas to test the implementation. Testers can create small utility tools using excel macros for data comparison which can help in deriving a dynamic structure from the various data sources during the pre Hadoop processing stage.
+
+For instance, Aspire designed a test automation framework for one of our large retail customers’ big data implementation in the BDT (Behavior Driven Testing) model using Cucumber and Ruby. The framework helped in performing count and data validation during the data processing stage by comparing the record count between the Hive and SQL tables and confirmed that the data is properly loaded without any truncation by verifying the data between Hive and SQL tables.
+
+Similarly when it comes to validation on the map-reduce process stage, it definitely helps if the tester has good experience on programming languages. The reason is because unlike SQL where queries can be constructed to work through the data MapReduce framework transforms a list of key-value pairs into a list of values. A good unit testing framework like Junit or PyUnit can help validate the individual parts of the MapReduce job but they do not test them as a whole.
+
+Building a test automation framework using a programming language like Java can help here. The automation framework can focus on the bigger picture pertaining to MapReduce jobs while encompassing the unit tests as well. Setting up the automation framework to a continuous integration server like Jenkins can be even more helpful. However, building the right framework for big data applications relies on how the test environment is setup as the processing happens in a distributed manner here. There could be a cluster of machines on the QA server where testing of MapReduce jobs should happen.
+
+Conclusion
+
+In summary, test automation can be a good approach in testing big data implementations. Identifying the requirements and building a robust automation framework can help in doing comprehensive testing. However, a lot would depend on how the skills of the tester and how the big data environment is setup. In addition to functional testing of big data applications using approaches such as test automation, given the large size of data there are definitely needs for Performance and load testing in big data implementations.
