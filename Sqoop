@@ -1,3 +1,12 @@
+sudo su - hdfs
+
+su - hdfs
+
+hdfs dfs -mkdir -p /mp2/links
+
+hdfs dfs -chown -R root:hdfs /mp2/links
+
+
 [root@localhost cloudera]# sqoop import --connect
 jdbc:mysql://localhost:3306/employees --username root1 --password
 root2 --table employees -m 1 --target-dir /user/cloudera/out1
