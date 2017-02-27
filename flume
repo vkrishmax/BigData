@@ -1,0 +1,131 @@
+Refer : https://www.eduonix.com/blog/bigdata-and-hadoop/flume-installation-and-streaming-twitter-data-using-flume/
+
+Real-Time Analytics using Twitter Feeds, Hadoop, Hive & Flume
+
+Create an application in https://apps.twitter.com/  and then generate the corresponding keys.
+Sign up or Sign in using your twitter credential.
+Create New App for your twitter analysis.
+
+
+
+
+Assuming that Hadoop has already been installed and configured, the next step is downloading Apache Flume from the below link and extract it to any folder.
+http://archive.apache.org/dist/flume/1.4.0/
+Download the apache-flume-1.4.0-bin.tar.gz file
+After extraction of apache flume we need to add our configuration details into conf/flume-env.sh and conf/flume.conf files. Both files will be in template format and we need to rename the files names as conf/flume-env.sh and conf/flume.conf
+flume-env-sh.template    flume-env.sh
+flume.conf.template  flume.conf
+Download the guava-14.0.1.jar from the below link and add this into apache flume bin folder. http://search.maven.org/remotecontent?filepath=com/google/guava/guava/14.0.1/guava-14.0.1.jar
+
+Download the flume-sources-1.0-SNAPSHOT.jar from the below source link and add it into the apache flume bin folder.
+http://files.cloudera.com/samples/flume-sources-1.0-SNAPSHOT.jar
+Configure the flume class path as shown below in the conf/flume-env.sh file.
+#FLUME_CLASSPATH= "<Directory where you extracted the Apache flume > /apache-flume-1.4.0-bin/lib/flume-sources-1.0-SNAPSHOT.jar"
+*** The above jar contains the java classes to pull the Tweets and save them into HDFS.
+
+The conf/flume.conf should have all the agents (flume, memory and HDFS) defined as below :
+The consumerKey, consumerSecret, accessToken and accessTokenSecret have to be replaced with those obtained from https://apps.twitter.com/  and, TwitterAgent.sinks.HDFS.hdfs.path should point to the NameNode and the location in HDFS where the tweets will go to.
+The TwitterAgent.sources.Twitter.keywords value can be modified to get the tweets for some other topic like football, movies etc.
+####################################################################
+
+
+TwitterAgent.sources = Twitter
+TwitterAgent.channels = MemChannel
+TwitterAgent.sinks = HDFS
+ 
+TwitterAgent.sources.Twitter.type = com.cloudera.flume.source.TwitterSource
+TwitterAgent.sources.Twitter.channels = MemChannel
+TwitterAgent.sources.Twitter.consumerKey = <consumerKey>
+TwitterAgent.sources.Twitter.consumerSecret = <consumerSecret>
+TwitterAgent.sources.Twitter.accessToken = <accessToken>
+TwitterAgent.sources.Twitter.accessTokenSecret = <accessTokenSecret>
+ 
+TwitterAgent.sources.Twitter.keywords = hadoop, big data, analytics, bigdata, cloudera, data science, data scientiest, business intelligence, mapreduce, data warehouse, data warehousing, mahout, hbase, nosql, newsql, businessintelligence, cloudcomputing
+ 
+TwitterAgent.sinks.HDFS.channel = MemChannel
+TwitterAgent.sinks.HDFS.type = hdfs
+TwitterAgent.sinks.HDFS.hdfs.path = hdfs://localhost/user/flume/tweets/
+TwitterAgent.sinks.HDFS.hdfs.fileType = DataStream
+TwitterAgent.sinks.HDFS.hdfs.writeFormat = Text
+TwitterAgent.sinks.HDFS.hdfs.batchSize = 1000
+TwitterAgent.sinks.HDFS.hdfs.rollSize = 0
+TwitterAgent.sinks.HDFS.hdfs.rollCount = 10000
+ 
+TwitterAgent.channels.MemChannel.type = memory
+TwitterAgent.channels.MemChannel.capacity = 10000
+TwitterAgent.channels.MemChannel.transactionCapacity = 1000
+
+
+
+###########################################################################################
+
+
+
+Start flume using the below command
+bin/flume-ng agent --conf ./conf/ -f conf/flume.conf -Dflume.root.logger=DEBUG,console -n TwitterAgent
+*** After a couple of minutes the Tweets should appear in HDFS.
+*** Try to use the same Linux user for all your operations .
+
+Download hive-serdes-1.0-SNAPSHOT.jar to the lib directory in Hive. Twitter returns Tweets in the JSON format and this library will help Hive understand the JSON format.
+http://files.cloudera.com/samples/hive-serdes-1.0-SNAPSHOT.jar
+After download we need to place the hive-serdes-1.0-SNAPSHOT.jar in /usr/lib/hive/lib/  folder
+
+Start the Hive shell using the hive command and register the hive-serdes-1.0-SNAPSHOT.jar file downloaded earlier.
+
+Now, create the tweets table in Hive
+CREATE EXTERNAL TABLE tweets (
+   id BIGINT,
+   created_at STRING,
+   source STRING,
+   favorited BOOLEAN,
+   retweet_count INT,
+   retweeted_status STRUCT<
+      text:STRING,
+      user:STRUCT<screen_name:STRING,name:STRING>>,
+   entities STRUCT<
+      urls:ARRAY<STRUCT<expanded_url:STRING>>,
+      user_mentions:ARRAY<STRUCT<screen_name:STRING,name:STRING>>,
+      hashtags:ARRAY<STRUCT<text:STRING>>>,
+   text STRING,
+   user STRUCT<
+      screen_name:STRING,
+      name:STRING,
+      friends_count:INT,
+      followers_count:INT,
+      statuses_count:INT,
+      verified:BOOLEAN,
+      utc_offset:INT,
+      time_zone:STRING>,
+   in_reply_to_screen_name STRING
+) 
+ROW FORMAT SERDE 'com.cloudera.hive.serde.JSONSerDe'
+LOCATION ' hdfs://localhost/user/flume/tweets/';
+
+
+Now that we have the data in HDFS and the table created in Hive, let’s run some queries in Hive.
+
+
+
+
+
+
+Example 1:
+One of the ways to determine who the most influential person in a particular field is to figure out whose tweets are re-tweeted the most.
+*** Given enough time for Flume to collect Tweets from Twitter to HDFS and then run the below query in Hive to determine the most influential person.
+
+SELECT t.retweeted_screen_name, 
+       sum(retweets) AS total_retweets, 
+       count(*) AS tweet_count FROM 
+(SELECT retweeted_status.user.screen_name as retweeted_screen_name, retweeted_status.text, max(retweet_count) as retweets 
+FROM tweets GROUP BY retweeted_status.user.screen_name, retweeted_status.text) t 
+GROUP BY t.retweeted_screen_name 
+ORDER BY total_retweets DESC 
+LIMIT 10;
+
+
+Example 2:
+Similarly to know which user has the most number of followers, the below query helps.
+select user.screen_name,
+           user.followers_count c 
+from tweets 
+order by c desc;
