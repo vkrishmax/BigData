@@ -1,5 +1,11 @@
 Refer : https://www.eduonix.com/blog/bigdata-and-hadoop/flume-installation-and-streaming-twitter-data-using-flume/
 
+
+https://twittercommunity.com/t/twitter-streaming-api-not-working-with-twitter4j-and-apache-flume/66612/55
+http://community.cloudera.com/t5/Data-Ingestion-Integration/404-The-URI-requested-is-invalid-or-the-resource-requested-such/td-p/49831
+
+
+
 Real-Time Analytics using Twitter Feeds, Hadoop, Hive & Flume
 
 Create an application in https://apps.twitter.com/  and then generate the corresponding keys.
